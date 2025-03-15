@@ -12,6 +12,10 @@ const LoginPage: React.FC = () => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
+    const handleForgotPassword = () => {
+        navigate('/reset-password-request');
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
@@ -36,6 +40,9 @@ const LoginPage: React.FC = () => {
                     <TextField label="Password" name="password" type="password" value={formData.password} onChange={handleChange} required />
                     <Button variant="contained" color="primary" type="submit">
                         Login
+                    </Button>
+                    <Button variant="text" color="secondary" onClick={handleForgotPassword}>
+                        Forgot password?
                     </Button>
                 </Box>
                 {message && (
