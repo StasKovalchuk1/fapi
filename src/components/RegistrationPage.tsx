@@ -22,9 +22,13 @@ const RegistrationPage: React.FC = () => {
         try {
             await registerUser(formData);
             setMessage('Registration successful! Please check your email to confirm your account.');
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            setMessage('Registration failed. Please try again.');
+            if (error.response && error.response.data && error.response.data.message) {
+                setMessage(error.response.data.message);
+            } else {
+                setMessage('Registration failed. Please try again.');
+            }
         }
     };
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import axios from 'axios';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
@@ -11,23 +11,24 @@ export function ConfirmEmail() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const token = searchParams.get("token");
+    const hasCalled = useRef(false);
 
     useEffect(() => {
-        if (token) {
+        if (token && !hasCalled.current) {
+            hasCalled.current = true;
             axios
                 .get<ConfirmResponse>(`http://localhost:8080/tracking-service/api/users/confirm-email?token=${token}`)
                 .then(response => {
                     setMessage(response.data.message);
-                    // Если подтверждение прошло успешно, через 3 сек переходим на логин.
                     if (response.data.message === "Email successfully confirmed") {
-                        setTimeout(() => navigate("/login"), 3000);
+                        setTimeout(() => navigate("/login"), 1000);
                     }
                 })
                 .catch(error => {
                     console.error(error);
                     setMessage("Error during email verification.");
                 });
-        } else {
+        } else if (!token) {
             setMessage("Token is missing.");
         }
     }, [token, navigate]);
