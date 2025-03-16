@@ -23,7 +23,10 @@ export interface LoginRequest {
 
 export interface LoginResponse {
     success: boolean;
-    token?: string;
+    username?: string;
+    errorMessage?: string;
+    currentRole?: string;
+    authToken?: string;
 }
 
 export async function registerUser(data: RegisterRequest): Promise<void> {
@@ -31,7 +34,9 @@ export async function registerUser(data: RegisterRequest): Promise<void> {
 }
 
 export async function loginUser(data: LoginRequest): Promise<LoginResponse> {
-    const response = await axios.post<LoginResponse>(`${BASE_URL}/users/login`, data);
+    const response = await axios.post<LoginResponse>(`${BASE_URL}/login`, data, {
+        headers: { 'Content-Type': 'application/json' }
+    });
     return response.data;
 }
 
