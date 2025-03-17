@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, TextField, Button, Typography, Box, Paper } from '@mui/material';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { confirmPasswordReset } from '../api/auth';
+import { confirmPasswordReset } from '../../api/auth';
 
 const ResetPasswordPage: React.FC = () => {
     const [searchParams] = useSearchParams();

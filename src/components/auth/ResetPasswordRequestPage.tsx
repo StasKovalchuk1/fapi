@@ -1,7 +1,7 @@
 // src/components/ResetPasswordRequestPage.tsx
 import React, { useState } from 'react';
 import { Container, TextField, Button, Typography, Box, Paper } from '@mui/material';
-import { initiatePasswordReset } from '../api/auth';
+import { initiatePasswordReset } from '../../api/auth';
 
 const ResetPasswordRequestPage: React.FC = () => {
     const [email, setEmail] = useState('');

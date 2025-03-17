@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Container, TextField, Button, Typography, Box, Paper } from '@mui/material';
-import { registerUser, Role, RegisterRequest } from '../api/auth';
+import { registerUser, Role, RegisterRequest } from '../../api/auth';
 
 const RegistrationPage: React.FC = () => {
     const [formData, setFormData] = useState<RegisterRequest>({
