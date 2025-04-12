@@ -1,9 +1,9 @@
-import React, {JSX} from 'react';
+import React, { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
-import {useAuth} from "./AuthContext";
+import { useAuth } from "./AuthContext";
 
 interface ProtectedRouteProps {
-    children: JSX.Element;
+    children: ReactNode;
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
@@ -11,5 +11,5 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     if (!auth.isAuthenticated) {
         return <Navigate to="/login" replace />;
     }
-    return children;
+    return <>{children}</>;
 }
