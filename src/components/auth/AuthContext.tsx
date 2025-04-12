@@ -1,27 +1,22 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-interface AuthContextType {
+interface AuthContext {
     token: string | null;
     isAuthenticated: boolean;
     login: (token: string) => void;
     logout: () => void;
 }
 
-interface AuthProviderProps {
-    children: ReactNode;
-}
-
-const AuthContext = createContext<AuthContextType>({
+const AuthContext = createContext<AuthContext>({
     token: null,
     isAuthenticated: false,
     login: () => {},
     logout: () => {},
 });
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [token, setToken] = useState<string | null>(null);
 
-    // При загрузке читаем token из localStorage
     useEffect(() => {
         const storedToken = localStorage.getItem('token');
         if (storedToken) {
