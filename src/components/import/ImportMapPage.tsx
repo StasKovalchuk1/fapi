@@ -29,8 +29,6 @@ const MapImportPage: React.FC = () => {
             const mapData = await importMap(selectedFile);
             setImportedMap(mapData);
             setMessage('Map imported successfully!');
-            // Перенаправить или обновить состояние дашборда по необходимости
-            // Например, можно сразу перейти на Dashboard:
             navigate('/dashboard');
         } catch (error) {
             console.error(error);
