@@ -1,30 +1,36 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Container,
     Paper,
     Typography,
     Box,
-    Button,
     List,
     ListItemButton,
     ListItemText,
+    Switch,
+    FormControlLabel,
+    useTheme,
+    useMediaQuery,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
 import { getLastMap, MapDTO } from '../api/maps';
 import ProductSearchBar from './ProductSearchBar';
 import { getProductDetails, ProductSearchDTO, ProductDetailsDTO } from '../api/inventory';
-import {useAuth} from "./auth/AuthContext";
 import ProductDetailsModal from "./modal/ProductDetailsModalWindow";
+import Header from './layout/Header';
+import MapViewer from './map/MapViewer';
+import ReportAnalysisDialog from './analysis/ReportAnalysisDialog';
 
 const Dashboard: React.FC = () => {
     const [mapData, setMapData] = useState<MapDTO | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [selectedProductDetails, setSelectedProductDetails] = useState<ProductDetailsDTO[]>([]);
     const [detailProduct, setDetailProduct] = useState<ProductDetailsDTO | null>(null);
-    const [modalOpen, setModalOpen] = useState(false);
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const navigate = useNavigate();
-    const auth = useAuth();
+    const [modalOpen, setModalOpen] = useState<boolean>(false);
+    const [showHeatMap, setShowHeatMap] = useState<boolean>(false);
+    const [analysisDialogOpen, setAnalysisDialogOpen] = useState<boolean>(false);
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const isMedium = useMediaQuery(theme.breakpoints.down('md'));
 
     useEffect(() => {
         getLastMap()
@@ -38,11 +44,10 @@ const Dashboard: React.FC = () => {
             });
     }, []);
 
-
     const handleProductsSelected = async (products: ProductSearchDTO[]) => {
         const limited = products.slice(0, 10);
         try {
-            const detailsArr: ProductDetailsDTO[] = await Promise.all(
+            const detailsArr = await Promise.all(
                 limited.map((prod) => getProductDetails(prod.inventoryId))
             );
             setSelectedProductDetails(detailsArr);
@@ -50,52 +55,6 @@ const Dashboard: React.FC = () => {
             console.error('Error loading product details:', error);
         }
     };
-
-    useEffect(() => {
-        if (mapData && canvasRef.current) {
-            const canvas = canvasRef.current;
-            canvas.width = Number(mapData.width);
-            canvas.height = Number(mapData.height);
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                ctx.strokeStyle = 'black';
-                ctx.strokeRect(0, 0, canvas.width, canvas.height);
-                mapData.zones?.forEach(zone => {
-                    try {
-                        const shapeObj = JSON.parse(zone.shape);
-                        const points: { x: number; y: number }[] = shapeObj.points;
-                        if (points && points.length > 0) {
-                            ctx.beginPath();
-                            ctx.moveTo(points[0].x, points[0].y);
-                            for (let i = 1; i < points.length; i++) {
-                                ctx.lineTo(points[i].x, points[i].y);
-                            }
-                            ctx.closePath();
-                            ctx.fillStyle = 'rgba(0, 128, 255, 0.3)';
-                            ctx.fill();
-                            ctx.strokeStyle = 'blue';
-                            ctx.stroke();
-                        }
-                    } catch (e) {
-                        console.error('Error parsing zone shape', e);
-                    }
-                });
-                selectedProductDetails.forEach(product => {
-                    const { coordinateX, coordinateY } = product.coordinates;
-                    ctx.beginPath();
-                    ctx.arc(coordinateX, coordinateY, 8, 0, 2 * Math.PI);
-                    ctx.fillStyle = 'red';
-                    ctx.fill();
-                    ctx.strokeStyle = 'darkred';
-                    ctx.stroke();
-                    ctx.font = '12px Arial';
-                    ctx.fillStyle = 'black';
-                    ctx.fillText(`${product.inventoryId} - ${product.productName}`, coordinateX + 10, coordinateY);
-                });
-            }
-        }
-    }, [mapData, selectedProductDetails]);
 
     const handleProductClick = (inventoryId: number) => {
         const product = selectedProductDetails.find(p => p.inventoryId === inventoryId);
@@ -105,50 +64,100 @@ const Dashboard: React.FC = () => {
         }
     };
 
-    const handleLogout = () => {
-        auth.logout();
-        navigate('/login');
+    const handleToggleHeatMap = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setShowHeatMap(event.target.checked);
+    };
+
+    const handleAnalysisOpen = () => {
+        setAnalysisDialogOpen(true);
+    };
+
+    const handleAnalysisClose = () => {
+        setAnalysisDialogOpen(false);
     };
 
     return (
-        <Container maxWidth="md" sx={{ mt: 4 }}>
-            <Paper sx={{ p: 4 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="h4">Dashboard</Typography>
-                    <Button variant="contained" color="secondary" onClick={handleLogout}>
-                        Logout
-                    </Button>
-                </Box>
-                <Box sx={{ mt: 2 }}>
-                    <ProductSearchBar onProductsSelected={handleProductsSelected} maxSelection={10} />
-                </Box>
-                <Box sx={{ mt: 2 }}>
-                    <Typography variant="h5">Selected Products</Typography>
-                    {selectedProductDetails.length === 0 ? (
-                        <Typography>No products selected</Typography>
-                    ) : (
-                        <List>
-                            {selectedProductDetails.map(product => (
-                                <ListItemButton key={product.inventoryId} onClick={() => handleProductClick(product.inventoryId)}>
-                                    <ListItemText primary={`${product.inventoryId} - ${product.productName}`} />
-                                </ListItemButton>
-                            ))}
-                        </List>
-                    )}
-                </Box>
-                <Box sx={{ mt: 2 }}>
-                    <canvas
-                        ref={canvasRef}
-                        style={{ border: '1px solid #ccc', width: '100%', height: 'auto' }}
-                    />
-                </Box>
-            </Paper>
+        <>
+            <Header onReportAnalysisClick={handleAnalysisOpen} />
+            <Container maxWidth={isMobile ? "sm" : isMedium ? "md" : "lg"} sx={{ mt: 4, mb: 4 }}>
+                <Paper sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+                    <Typography variant="h4" sx={{ mb: 2 }}>Dashboard</Typography>
+                    
+                    <Box sx={{ mt: 2 }}>
+                        <ProductSearchBar onProductsSelected={handleProductsSelected} maxSelection={10} />
+                    </Box>
+                    
+                    <Box sx={{ 
+                        display: 'flex', 
+                        flexDirection: isMobile ? 'column' : 'row',
+                        mt: 3,
+                        gap: 2
+                    }}>
+                        <Box sx={{ 
+                            width: isMobile ? '100%' : '30%',
+                            minWidth: isMobile ? 'auto' : '250px'
+                        }}>
+                            <Typography variant="h5" sx={{ mb: 1 }}>Selected Products</Typography>
+                            <FormControlLabel
+                                control={<Switch checked={showHeatMap} onChange={handleToggleHeatMap} />}
+                                label="Show Heat Map"
+                                sx={{ mb: 2 }}
+                            />
+                            {selectedProductDetails.length === 0 ? (
+                                <Typography>No products selected</Typography>
+                            ) : (
+                                <List sx={{ 
+                                    maxHeight: '400px', 
+                                    overflow: 'auto',
+                                    border: '1px solid #eee',
+                                    borderRadius: '4px'
+                                }}>
+                                    {selectedProductDetails.map(product => (
+                                        <ListItemButton 
+                                            key={product.inventoryId} 
+                                            onClick={() => handleProductClick(product.inventoryId)}
+                                            divider
+                                        >
+                                            <ListItemText 
+                                                primary={`${product.inventoryId} - ${product.productName}`}
+                                                secondary={`Status: ${product.status} | Category: ${product.categoryName}`}
+                                            />
+                                        </ListItemButton>
+                                    ))}
+                                </List>
+                            )}
+                        </Box>
+                        
+                        <Box sx={{ 
+                            width: isMobile ? '100%' : '70%',
+                            mt: isMobile ? 2 : 0
+                        }}>
+                            <Typography variant="h5" sx={{ mb: 1 }}>Warehouse Map</Typography>
+                            {loading ? (
+                                <Typography>Loading map...</Typography>
+                            ) : (
+                                <MapViewer 
+                                    mapData={mapData} 
+                                    selectedProducts={selectedProductDetails} 
+                                    showHeatMap={showHeatMap}
+                                />
+                            )}
+                        </Box>
+                    </Box>
+                </Paper>
+            </Container>
+            
             <ProductDetailsModal
                 product={detailProduct}
                 open={modalOpen}
                 onClose={() => setModalOpen(false)}
             />
-        </Container>
+            
+            <ReportAnalysisDialog
+                open={analysisDialogOpen}
+                onClose={handleAnalysisClose}
+            />
+        </>
     );
 };
 
